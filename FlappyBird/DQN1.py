@@ -10,6 +10,11 @@ import matplotlib.pylab as plt
 sys.path.append('game')
 import wrapped_flappy_bird as env
 
+tf.flags.DEFINE_string('mode', 'play', 'The mode of train or predict as follows: '
+                                       'train'
+                                       'play')
+FLAGS = tf.flags.FLAGS
+
 np.random.seed(1)
 tf.set_random_seed(1)
 
@@ -54,11 +59,11 @@ def convert(S):
 
 
 class QLAgent():
-    def __init__(self, Graph_Write=False, mode='train'):
+    def __init__(self, Graph_Write=False):
         self.build_net()
         self.sess = tf.Session()
         self.saver = tf.train.Saver(max_to_keep=1)
-        if mode == 'train':
+        if FLAGS.mode == 'train':
             self.epsilon = INITIAL_EPSILON
             self.epsilon_increment = (EPSILON - INITIAL_EPSILON) / EXPLORE
             self.store = []
@@ -69,7 +74,7 @@ class QLAgent():
             self.sess.run(tf.global_variables_initializer())
             self.cost_hist = []
             self.Reward = []
-        elif mode == 'play':
+        elif FLAGS.mode == 'play':
             self.saver.restore(self.sess, 'saved_networks/FB2_DQN')
 
     def build_net(self):
@@ -172,14 +177,10 @@ class QLAgent():
         plt.show()
 
 
-class usr():
-    def __init__(self, mode):
+class Usr():
+    def __init__(self):
         self.env = env
-        self.agent = QLAgent(Graph_Write=False, mode=mode)
-        if mode == 'train':
-            self.train()
-        elif mode == 'play':
-            self.play()
+        self.agent = QLAgent(Graph_Write=False)
 
     def train(self):
         step = 0
@@ -207,7 +208,7 @@ class usr():
 
             print('Epoch %d/%d Reward:%d Epsilon:%f' % (epoch, EPOCHS, step_counter, self.agent.epsilon))
             self.agent.Reward.append(step_counter)
-            if step_counter > counter_max and self.agent.epsilon==1.0:
+            if step_counter > counter_max and self.agent.epsilon == 1.0:
                 counter_max = step_counter
                 self.agent.saver.save(self.agent.sess, 'saved_networks/FB2_DQN')
                 print('model saved successfully!')
@@ -221,9 +222,9 @@ class usr():
         for test_step in range(1, 1001):
             step_counter = 0
             game_state = self.env.GameState()
-            S = convert(game_state.frame_step(ACTION[0])[0])
+            S, _, is_terminal = game_state.frame_step(ACTION[0])
+            S = convert(S)
             S = np.stack((S, S, S, S), axis=2)
-            is_terminal = False
 
             while not is_terminal:
                 A = self.agent.choose_action_deterministic(S)
@@ -236,5 +237,14 @@ class usr():
             print('Test %d Reward:%d' % (test_step, step_counter))
 
 
+def main(unused_argvs):
+    usr = Usr()
+
+    if FLAGS.mode == 'train':
+        usr.train()
+    elif FLAGS.mode == 'play':
+        usr.play()
+
+
 if __name__ == '__main__':
-    usr(mode='play')
+    tf.app.run()
