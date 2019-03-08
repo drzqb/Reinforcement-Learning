@@ -21,7 +21,7 @@ WIDTH, HEIGHT = 80, 80
 ACTIONS = 2
 ACTION = np.array([[1, 0], [0, 1]], dtype=np.int32)
 INITIAL_EPSILON = 0.0
-EPSILON = 0.9
+EPSILON = 1.0
 ALPHA = 0.1
 LAMBDA = 0.9
 OBSERVE = 100
