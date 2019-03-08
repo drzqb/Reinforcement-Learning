@@ -213,7 +213,7 @@ class Usr():
                 self.agent.saver.save(self.agent.sess, 'saved_networks/FB2_DQN')
                 print('model saved successfully!')
             if step > OBSERVE:
-                for l in range(step_counter):
+                for l in range(min(step_counter, 50)):
                     self.agent.learn()
 
         self.agent.plot_cost_reward()
